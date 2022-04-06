@@ -6,7 +6,11 @@ from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtCore import (QCoreApplication, QPropertyAnimation, QDate, QDateTime, QMetaObject, QObject, QPoint, QRect, QSize, QTime, QUrl, Qt, QEvent)
 from PySide2.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont, QFontDatabase, QIcon, QKeySequence, QLinearGradient, QPalette, QPainter, QPixmap, QRadialGradient, QWindow)
 from PySide2.QtWidgets import *
+#from PyQt5 import QtWidgets
+#from PyQt5.QtWidgets import QMainWindow,QApplication
+#from PyQt5.uic import loadUi
 import webbrowser
+
 from CPUStress_Window_Dynamic import Ui_MainWindow
 from CPUStress_Window_Dynamic_Service import Ui_MainWindow1
 from CPUStress_Window_Dynamic_Infra import Ui_MainWindow2
@@ -18,6 +22,7 @@ from cryptography.fernet import Fernet
 from datetime import date
 import threading
 import time
+#from MemoryClass import Memory
 
 
 class MainScreen(QMainWindow):
@@ -37,6 +42,7 @@ class MainScreen(QMainWindow):
         server_name = self.ui.ServerInp.text()
         server_pwd = self.ui.PwdInp.text()
         self.Serveroptn = self.ui.Option_RBGrp.checkedButton().text()
+        
 
         if (server_user == '' or server_name == '' or server_pwd == ''):
             #self.ui.ConnStatusTxt.setStyleSheet('color : red')
@@ -47,8 +53,8 @@ class MainScreen(QMainWindow):
 
         self.conn = paramiko.SSHClient()
         self.conn.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        
         try:
+
             if(self.Serveroptn == "Linux"):
                 print("linux")
                 self.server = "Linux"
@@ -134,6 +140,8 @@ class MainScreen(QMainWindow):
             print('Exiting....')
         else:
             self.show()
+            
+           
 
 
 class ServiceProvider(QMainWindow):
@@ -264,16 +272,23 @@ class Cpu(QMainWindow):
                 self.ui3.CPUSExecStatusTxt.setText('Executing...')
                 self.ui3.CPUSExecStatusTxt.repaint()
                 self.selected_CPUper = self.ui3.CPUper_RBGrp.checkedButton().text()
+                stdin, stdout, stderr = self.conn.exec_command('nproc')
             
-                self.CPU_cores = None
+                self.CPU_cores = stdout.read().decode().strip()
+                print(self.CPU_cores)
+
                 if(self.selected_CPUper == "100%"):
-                    self.CPU_cores = 4
+                    self.CPU_cores = self.CPU_cores
+                    print(self.CPU_cores)
                 elif(self.selected_CPUper == "75%"):
-                    self.CPU_cores = 3
+                    self.CPU_cores = (int(self.CPU_cores)*3)/4
+                    print(self.CPU_cores)
                 elif(self.selected_CPUper == "50%"):
-                    self.CPU_cores = 2
+                    self.CPU_cores = (int(self.CPU_cores))/2
+                    print(self.CPU_cores)
                 elif(self.selected_CPUper == "25%"):
-                    self.CPU_cores = 1
+                    self.CPU_cores = (int(self.CPU_cores))/4
+                    print(self.CPU_cores)
                 
                 self.CPU_duration = self.ui3.spinBox.text()
                 
@@ -298,6 +313,7 @@ class Cpu(QMainWindow):
                 
                 self.CPU_duration = self.ui3.spinBox.text()
                 
+                #stdin, stdout, stderr = self.conn.exec_command('seq {cores} | xargs -P0 -n1 timeout {duration} md5sum /dev/zero'.format(cores = self.CPU_cores, duration = self.CPU_duration))
                 p = subprocess.Popen('powershell.exe -ExecutionPolicy RemoteSigned -file "cpu.ps1"', stdout=sys.stdout)
                 p.communicate()
 
@@ -345,6 +361,7 @@ class Memory(QMainWindow):
 
     def execute_Memorystress(self):
         try:
+
             self.ui5.MemoryExecStatusTxt.setAlignment(Qt.AlignCenter)
             self.ui5.MemoryExecStatusTxt.setStyleSheet('font-size:15pt;color : blue')
             self.ui5.MemoryExecStatusTxt.setText('Executing...')
